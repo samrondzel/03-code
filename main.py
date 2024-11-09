@@ -119,8 +119,6 @@ def loss(windows, labels, theta):
     labels_pred = y_theta(windows, theta)
     lossEval = -np.mean(labels * np.log(labels_pred) + (1 - labels) * np.log(1 - labels_pred))
 
-    print("Loss: ", lossEval)
-
     return lossEval
 
 def f_theta(windows, theta):
@@ -179,12 +177,11 @@ def train(X_windows, y_windows, theta, lr, steps, log_step):
     
     for step in range(steps):
         gradient_ = gradient(X_windows, y_windows, theta)
-        x = lr * gradient(X_windows, y_windows, theta)
-        y = theta - x
-        theta = y
+        loss_ = loss(X_windows, y_windows, theta)
+        theta = theta - lr * gradient_
 
         if step % log_step == 0:
-            print(f"Step {step}: Current theta = {theta}")
+            print(f"Step {step}: Current loss = {loss_} Current theta = {theta}")
     
     return theta
 
