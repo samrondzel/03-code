@@ -116,7 +116,12 @@ def loss(windows, labels, theta):
     :param theta: The current parameters of the classifier.
     :return:
     """
-    raise NotImplemented("Implement the function computing the loss of the model")
+    labels_pred = y_theta(windows, theta)
+    lossEval = -np.mean(labels * np.log(labels_pred) + (1 - labels) * np.log(1 - labels_pred))
+
+    print("Loss: ", lossEval)
+
+    return lossEval
 
 def f_theta(windows, theta):
     """This function computes the f(theta) of the model, also known as penultimate activation.
@@ -125,7 +130,7 @@ def f_theta(windows, theta):
     :param theta: The current parameters of the classifier.
     :return: f(theta) of the model.
     """
-    raise NotImplemented("Implement the function computing f_theta")
+    return np.dot(windows, theta)
 
 def y_theta(windows, theta):
     """This function computes the y(theta) of the model, i.e., a sigmoid function, but with base 2.
@@ -134,7 +139,9 @@ def y_theta(windows, theta):
     :param theta: The current parameters of the classifier.
     :return: A vector of size (N) with values between 0 and 1.
     """
-    raise NotImplemented("Implement the function computing y_theta")
+    z = f_theta(windows, theta)
+    z_clipped = np.clip(z, -500, 500)
+    return 1 / (1 + np.power(2, -z_clipped))
 
 def gradient(windows, labels, theta):
     """
@@ -145,12 +152,21 @@ def gradient(windows, labels, theta):
     :param theta: The current parameters of the classifier.
     :return: A vector of the same shape as theta.
     """
-    raise NotImplemented("Implement the function computing the gradient with respect to the current parameters. "
-                         "This function should be as fast as possible, i.e., you may want to compute it in a vectorized fashion.")
+
+    labels_pred = y_theta(windows, theta)
+
+    epsilon = 1e-15
+    labels_pred = np.clip(labels_pred, epsilon, 1 - epsilon)
+
+    gradient = np.mean(((labels_pred - labels) / (labels_pred * (1 - labels_pred)))[:, np.newaxis] * windows, axis=0)
+
+    return gradient;
 
 def train(X_windows, y_windows, theta, lr, steps, log_step):
     """
     This function trains the model.
+
+    θ ← θ − λ∇θφ
 
     :param X_windows: The image windows of the training data.
     :param y_windows: The labels of the training data.
@@ -160,7 +176,17 @@ def train(X_windows, y_windows, theta, lr, steps, log_step):
     :param log_step: Log interval
     :return: Updated parameters of the classifier.
     """
-    raise NotImplemented("Implement the training loop with gradient descent. Gradient descent should be applied 'steps' times.")
+    
+    for step in range(steps):
+        gradient_ = gradient(X_windows, y_windows, theta)
+        x = lr * gradient(X_windows, y_windows, theta)
+        y = theta - x
+        theta = y
+
+        if step % log_step == 0:
+            print(f"Step {step}: Current theta = {theta}")
+    
+    return theta
 
 def clip_valid_prediction_range(image, kernel_size: int = 3):
     """Computes the prediction range of an image, i.e., the center pixels of the image for which we can fit in windows of
